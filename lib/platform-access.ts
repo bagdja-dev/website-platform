@@ -1,9 +1,23 @@
 import { isOrganizationAdminAccess } from "./platform-access-response.mjs";
 
+export type PlatformAccount = {
+  displayName: string;
+  email: string | null;
+  profilePicture: string | null;
+};
+
+type PlatformAccess = {
+  allowed: boolean;
+  role: "super_admin" | "designer" | "reviewer" | "applicant" | null;
+  organizationName: string;
+  account: PlatformAccount;
+};
+
 export async function getPlatformAccess(accessToken: string): Promise<{
   allowed: boolean;
   role: "super_admin" | "designer" | "reviewer" | "applicant" | null;
   organizationName: string;
+  account: PlatformAccount;
 }> {
   const apiUrl =
     process.env.BAGDJA_WEBSITE_API_URL ??
@@ -25,5 +39,15 @@ export async function getPlatformAccess(accessToken: string): Promise<{
   if (!isOrganizationAdminAccess(payload)) {
     throw new Error("Website API returned an invalid platform access response");
   }
-  return payload;
+  const access = payload as Omit<PlatformAccess, "account"> & {
+    account?: PlatformAccount;
+  };
+  return {
+    ...access,
+    account: access.account ?? {
+      displayName: "Akun Bagdja",
+      email: null,
+      profilePicture: null,
+    },
+  };
 }

@@ -13,6 +13,7 @@ export default async function AccessManagementPage() {
 
   return (
     <PlatformShell
+      account={access.account}
       organizationName={access.organizationName}
       role="super_admin"
       section="access"

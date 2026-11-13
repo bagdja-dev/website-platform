@@ -23,13 +23,16 @@ export type SubmissionStatus =
 
 export type SystemPage =
   | 'header'
+  | 'bottom_nav'
   | 'cart'
   | 'orders'
   | 'order_detail'
   | 'tagihan'
   | 'invoice_detail'
   | 'calendar'
-  | 'gathering_plan';
+  | 'gathering_plan'
+  | 'product_detail'
+  | 'gathering_invitation';
 
 export type CandidateFixture =
   | 'home'
@@ -194,6 +197,7 @@ export const FIXTURE_LABELS: Record<CandidateFixture, string> = {
   page: 'Halaman biasa',
   empty: 'Website baru (kosong)',
   header_only: 'Header',
+  bottom_nav: 'Navigasi bawah (HP)',
   cart: 'Keranjang',
   orders: 'Transaksi',
   order_detail: 'Detail transaksi',
@@ -201,6 +205,8 @@ export const FIXTURE_LABELS: Record<CandidateFixture, string> = {
   invoice_detail: 'Invoice',
   calendar: 'Kalender',
   gathering_plan: 'Rencana gathering',
+  product_detail: 'Detail produk gathering',
+  gathering_invitation: 'Undangan gathering',
 };
 
 export const CONTENT_FIXTURES: readonly CandidateFixture[] = ['home', 'page', 'empty'];
@@ -208,6 +214,7 @@ export const CONTENT_FIXTURES: readonly CandidateFixture[] = ['home', 'page', 'e
 /** Urutan tampil halaman sistem; fixture header bernama `header_only`. */
 const SYSTEM_PAGE_ORDER: readonly SystemPage[] = [
   'header',
+  'bottom_nav',
   'cart',
   'orders',
   'order_detail',
@@ -215,6 +222,8 @@ const SYSTEM_PAGE_ORDER: readonly SystemPage[] = [
   'invoice_detail',
   'calendar',
   'gathering_plan',
+  'product_detail',
+  'gathering_invitation',
 ];
 
 /** Fixture halaman sistem yang dinyatakan manifest (`pageOverrides`). */

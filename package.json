@@ -6,9 +6,9 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "next dev -p 5006",
-    "build": "next build",
-    "start": "next start -p 5006",
+    "dev": "node init && next dev -p 5006",
+    "build": "node init && next build",
+    "start": "node init && next start -p 5006",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node --test"

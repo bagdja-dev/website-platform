@@ -20,6 +20,7 @@ export default async function AccessRequestDetailPage({
 
   return (
     <PlatformShell
+      account={access.account}
       organizationName={access.organizationName}
       role="super_admin"
       section="access"

@@ -1,19 +1,24 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+
+import type { PlatformAccount } from '@/lib/platform-access';
 
 import { InboxNotificationBell } from './inbox-notification-bell';
 
 type PlatformRole = 'super_admin' | 'designer' | 'reviewer';
-type PlatformSection = 'overview' | 'templates' | 'packages' | 'access' | 'inbox';
+type PlatformSection = 'overview' | 'templates' | 'packages' | 'testers' | 'access' | 'inbox';
 
 export function PlatformShell({
   children,
+  account,
   organizationName,
   role,
   section,
   title,
 }: {
   children: ReactNode;
+  account: PlatformAccount;
   organizationName: string;
   role: PlatformRole;
   section: PlatformSection;
@@ -57,6 +62,16 @@ export function PlatformShell({
             <span className="nav-icon" aria-hidden="true">▦</span>
             {role === 'designer' ? 'Template saya' : 'Template & review'}
           </Link>
+          {role === 'designer' ? (
+            <Link
+              className={`nav-item${section === 'testers' ? ' active' : ''}`}
+              href="/testers"
+              aria-current={section === 'testers' ? 'page' : undefined}
+            >
+              <span className="nav-icon" aria-hidden="true">☷</span>
+              Tim penguji
+            </Link>
+          ) : null}
           <Link
             className={`nav-item${section === 'inbox' ? ' active' : ''}`}
             href="/inbox"
@@ -93,7 +108,25 @@ export function PlatformShell({
           </div>
           <div className="topbar-actions">
             {role === 'super_admin' ? <InboxNotificationBell /> : null}
-            <span className="topbar-user" aria-label="Akun Bagdja">B</span>
+            <div className="account-identity">
+              <span className="topbar-user" aria-label={account.displayName}>
+                {account.profilePicture ? (
+                  <Image
+                    src={account.profilePicture}
+                    alt=""
+                    width={34}
+                    height={34}
+                    unoptimized
+                  />
+                ) : (
+                  account.displayName.trim().charAt(0).toUpperCase() || 'A'
+                )}
+              </span>
+              <span className="account-copy">
+                <strong title={account.displayName}>{account.displayName}</strong>
+                {account.email ? <span title={account.email}>{account.email}</span> : null}
+              </span>
+            </div>
             <form action="/auth/logout" method="post">
               <button className="logout-button" type="submit">Keluar</button>
             </form>
@@ -102,7 +135,7 @@ export function PlatformShell({
 
         <main
           className={`main-content${
-            section === 'access' || section === 'inbox' || section === 'templates' || section === 'packages'
+            section === 'access' || section === 'inbox' || section === 'templates' || section === 'packages' || section === 'testers'
               ? ' main-content-wide'
               : ''
           }`}

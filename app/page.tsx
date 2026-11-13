@@ -43,6 +43,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <PlatformHome
+      account={access.account}
       organizationName={access.organizationName}
       role={access.role ?? "designer"}
     />
@@ -121,14 +122,17 @@ function AccessPendingPage({ organizationName }: { organizationName: string }) {
 }
 
 function PlatformHome({
+  account,
   organizationName,
   role,
 }: {
+  account: Awaited<ReturnType<typeof getPlatformAccess>>["account"];
   organizationName: string;
   role: "super_admin" | "designer" | "reviewer";
 }) {
   return (
     <PlatformShell
+      account={account}
       organizationName={organizationName}
       role={role}
       section="overview"

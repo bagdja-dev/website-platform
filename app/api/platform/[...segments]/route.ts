@@ -26,7 +26,12 @@ function isAllowedTemplateRoute(method: string, rest: string[]): boolean {
   if (rest.length === 1) {
     if (["review-queue", "packages", "discussions"].includes(rest[0])) return method === "GET";
     if (rest[0] === "submissions") return method === "POST";
+    // Tim penguji designer (template-candidate-trial-plan §2.2).
+    if (rest[0] === "testers") return method === "GET" || method === "POST";
     return false;
+  }
+  if (rest[0] === "testers") {
+    return rest.length === 2 && UUID_PATTERN.test(rest[1]) && method === "DELETE";
   }
   if (rest[0] !== "submissions") return false;
   if (rest.length === 2) {

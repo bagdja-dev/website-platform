@@ -24,6 +24,7 @@ export default async function InboxPage({ searchParams }: InboxPageProps) {
 
   return (
     <PlatformShell
+      account={access.account}
       organizationName={access.organizationName}
       role={access.role}
       section="inbox"

@@ -318,6 +318,8 @@ a {
   display: grid;
   width: 34px;
   height: 34px;
+  flex: 0 0 34px;
+  overflow: hidden;
   place-items: center;
   border: 1px solid var(--line);
   border-radius: 50%;
@@ -325,6 +327,44 @@ a {
   color: var(--plum);
   font-size: 12px;
   font-weight: 700;
+}
+
+.topbar-user img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+}
+
+.account-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.account-copy strong,
+.account-copy span {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-copy strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.account-copy span {
+  color: var(--muted);
+  font-size: 10px;
 }
 
 .logout-button {
@@ -2633,6 +2673,10 @@ h1 {
     gap: 8px;
   }
 
+  .account-copy {
+    display: none;
+  }
+
   .status-card {
     padding: 27px 22px;
   }
@@ -2937,6 +2981,7 @@ h1 {
 .candidate-preview-stage.is-mobile .candidate-preview-frame { width: min(390px, 100%); }
 .candidate-preview-placeholder { align-self: center; color: var(--muted); font-size: 13px; }
 .candidate-preview-note { margin: 0; color: var(--muted); font-size: 11px; }
+.candidate-preview-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
 
 /* Reviewer */
 .review-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
@@ -3021,3 +3066,12 @@ h1 {
   .review-secondary-actions { grid-template-columns: minmax(0, 1fr); }
   .flow-detail-header { flex-direction: column; }
 }
+
+/* Tim penguji designer */
+.tester-manager { display: grid; gap: 28px; }
+.tester-manager h2 { margin: 0 0 6px; }
+.tester-manager h3 { margin: 0 0 6px; font-size: 16px; }
+.tester-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-top: 14px; }
+.tester-form label { flex: 1 1 280px; }
+.tester-websites { margin: 10px 0 0; padding: 0; display: grid; gap: 10px; list-style: none; }
+.tester-websites li { padding: 12px 14px; border: 1px solid var(--line, #e4e4e7); border-radius: 12px; overflow-wrap: anywhere; }
