@@ -17,6 +17,7 @@ import {
   type SubmissionStatus,
   type TemplateManifestSummary,
 } from '@/lib/template-submission';
+import { buildPreviewDocument } from '@/lib/template-preview-document';
 
 export function StatusPill({ status }: { status: SubmissionStatus }) {
   const meta = STATUS_META[status];
@@ -124,7 +125,7 @@ export function CheckReportView({ report, checkedAt }: { report: CheckReport; ch
   );
 }
 
-type PreviewState = { status: 'loading' | 'ready' | 'error'; html?: string; message?: string };
+type PreviewState = { status: 'loading' | 'ready' | 'error'; html?: string; clientScript?: string | null; message?: string };
 
 /** Preview artefak kandidat: HTML hasil SSR di iframe inert (tanpa script). */
 export function CandidatePreview({
@@ -143,6 +144,7 @@ export function CandidatePreview({
   ];
   const [fixture, setFixture] = useState<CandidateFixture>('home');
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [runScripts, setRunScripts] = useState(true);
   const [cache, setCache] = useState<Record<string, PreviewState>>({});
   const requested = useRef(new Set<string>());
   const key = `${digest}:${fixture}`;
@@ -151,8 +153,11 @@ export function CandidatePreview({
   useEffect(() => {
     if (requested.current.has(key)) return;
     requested.current.add(key);
-    requestJson<{ html: string }>(`${submissionApi(submissionId, 'preview')}?fixture=${fixture}`)
-      .then((result) => setCache((current) => ({ ...current, [key]: { status: 'ready', html: result.html } })))
+    requestJson<{ html: string; clientScript?: string | null }>(`${submissionApi(submissionId, 'preview')}?fixture=${fixture}`)
+      .then((result) => setCache((current) => ({
+        ...current,
+        [key]: { status: 'ready', html: result.html, clientScript: result.clientScript ?? null },
+      })))
       .catch((error: unknown) => {
         requested.current.delete(key);
         setCache((current) => ({
@@ -186,6 +191,22 @@ export function CandidatePreview({
             </div>
           ))}
         </div>
+        <div className="candidate-preview-controls">
+        {state.status === 'ready' && state.clientScript ? (
+          <div className="segmented" aria-label="JavaScript template">
+            {([true, false] as const).map((item) => (
+              <button
+                aria-pressed={item === runScripts}
+                className={item === runScripts ? 'active' : ''}
+                key={String(item)}
+                onClick={() => setRunScripts(item)}
+                type="button"
+              >
+                {item ? 'JS aktif' : 'Tanpa JS'}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <div className="segmented" aria-label="Ukuran layar">
           {(['desktop', 'mobile'] as const).map((item) => (
             <button
@@ -199,13 +220,16 @@ export function CandidatePreview({
             </button>
           ))}
         </div>
+        </div>
       </div>
       <div className={`candidate-preview-stage is-${device}`}>
         {state.status === 'ready' ? (
           <iframe
             className="candidate-preview-frame"
-            sandbox=""
-            srcDoc={state.html}
+            key={`${key}:${runScripts}`}
+            referrerPolicy="no-referrer"
+            sandbox={runScripts && state.clientScript ? 'allow-scripts' : ''}
+            srcDoc={buildPreviewDocument(state.html ?? '', state.clientScript ?? null, runScripts && Boolean(state.clientScript))}
             title={`Preview ${FIXTURE_LABELS[fixture]} (${device})`}
           />
         ) : (
@@ -215,7 +239,9 @@ export function CandidatePreview({
         )}
       </div>
       <p className="candidate-preview-note">
-        Preview statis hasil render server dengan data contoh Bagdja. JavaScript browser template tidak dijalankan di sini.
+        {state.status === 'ready' && state.clientScript && runScripts
+          ? 'JavaScript template berjalan di sandbox terisolasi dengan data contoh Bagdja: tanpa akses jaringan dan sesi platform. Tautan serta aksi transaksi tidak dijalankan di preview.'
+          : 'Preview hasil render server dengan data contoh Bagdja' + (state.clientScript ? ' (JavaScript dimatikan).' : '. Template ini tidak membawa JavaScript browser.')}
       </p>
     </div>
   );

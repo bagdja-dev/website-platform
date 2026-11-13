@@ -23,6 +23,7 @@ export default async function TemplatesPage({ searchParams }: TemplatesPageProps
 
   return (
     <PlatformShell
+      account={access.account}
       organizationName={access.organizationName}
       role={access.role}
       section="templates"

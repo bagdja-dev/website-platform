@@ -13,6 +13,7 @@ export default async function PackagesPage() {
 
   return (
     <PlatformShell
+      account={access.account}
       organizationName={access.organizationName}
       role={access.role}
       section="packages"
