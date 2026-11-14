@@ -1,7 +1,6 @@
 .next/
 node_modules/
-.env
-.env.local
 coverage/
 *.tsbuildinfo
 
+config.bat

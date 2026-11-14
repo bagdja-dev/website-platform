@@ -19,8 +19,9 @@ const memoryStore = new Map<
 function getRedisClient(): Redis | null {
   if (redisClient !== undefined) return redisClient;
 
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Nama dari integrasi Upstash di Vercel (KV_REST_API_*) diterima sebagai cadangan.
+  const url = process.env.UPSTASH_REDIS_REST_URL?.trim() || process.env.KV_REST_API_URL?.trim();
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim() || process.env.KV_REST_API_TOKEN?.trim();
   redisClient =
     url?.startsWith('https://') && token
       ? new Redis({ url, token })
