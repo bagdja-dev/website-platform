@@ -17,7 +17,8 @@ import {
   type SubmissionStatus,
   type TemplateManifestSummary,
 } from '@/lib/template-submission';
-import { buildPreviewDocument } from '@/lib/template-preview-document';
+import { loadTemplateBrowserBundle, type TemplateBrowserBundleRef } from '@/lib/template-browser-bundle';
+import { buildClientPreviewDocument, buildPreviewDocument } from '@/lib/template-preview-document';
 
 export function StatusPill({ status }: { status: SubmissionStatus }) {
   const meta = STATUS_META[status];
@@ -125,9 +126,36 @@ export function CheckReportView({ report, checkedAt }: { report: CheckReport; ch
   );
 }
 
-type PreviewState = { status: 'loading' | 'ready' | 'error'; html?: string; clientScript?: string | null; message?: string };
+type PreviewState = {
+  status: 'loading' | 'ready' | 'error';
+  /** `client`: dirender di iframe dari browser.js + props fixture (tanpa container runtime). */
+  mode?: 'ssr' | 'client';
+  html?: string;
+  clientScript?: string | null;
+  props?: Record<string, unknown>;
+  bundleSource?: string;
+  message?: string;
+};
 
-/** Preview artefak kandidat: HTML hasil SSR di iframe inert (tanpa script). */
+type PreviewResponse = {
+  mode?: 'ssr' | 'client';
+  html: string;
+  clientScript?: string | null;
+  props?: Record<string, unknown> | null;
+  browserBundle?: TemplateBrowserBundleRef | null;
+};
+
+/** Ambil pratinjau; mode client bila kandidat punya browser.js (template-client-rendering-plan §8). */
+async function loadPreview(submissionId: string, fixture: CandidateFixture): Promise<PreviewState> {
+  const result = await requestJson<PreviewResponse>(`${submissionApi(submissionId, 'preview')}?fixture=${fixture}&mode=client`);
+  if (result.mode === 'client' && result.browserBundle && result.props) {
+    const bundleSource = await loadTemplateBrowserBundle(result.browserBundle);
+    return { status: 'ready', mode: 'client', props: result.props, bundleSource };
+  }
+  return { status: 'ready', mode: 'ssr', html: result.html, clientScript: result.clientScript ?? null };
+}
+
+/** Preview artefak kandidat: mode client (browser.js) atau HTML hasil SSR, di iframe sandbox tanpa jaringan. */
 export function CandidatePreview({
   submissionId,
   manifest,
@@ -149,15 +177,14 @@ export function CandidatePreview({
   const requested = useRef(new Set<string>());
   const key = `${digest}:${fixture}`;
   const state: PreviewState = cache[key] ?? { status: 'loading' };
+  const isClientMode = state.status === 'ready' && state.mode === 'client';
+  const hasTemplateScript = isClientMode || (state.status === 'ready' && Boolean(state.clientScript));
 
   useEffect(() => {
     if (requested.current.has(key)) return;
     requested.current.add(key);
-    requestJson<{ html: string; clientScript?: string | null }>(`${submissionApi(submissionId, 'preview')}?fixture=${fixture}`)
-      .then((result) => setCache((current) => ({
-        ...current,
-        [key]: { status: 'ready', html: result.html, clientScript: result.clientScript ?? null },
-      })))
+    loadPreview(submissionId, fixture)
+      .then((result) => setCache((current) => ({ ...current, [key]: result })))
       .catch((error: unknown) => {
         requested.current.delete(key);
         setCache((current) => ({
@@ -192,7 +219,7 @@ export function CandidatePreview({
           ))}
         </div>
         <div className="candidate-preview-controls">
-        {state.status === 'ready' && state.clientScript ? (
+        {hasTemplateScript ? (
           <div className="segmented" aria-label="JavaScript template">
             {([true, false] as const).map((item) => (
               <button
@@ -228,20 +255,27 @@ export function CandidatePreview({
             className="candidate-preview-frame"
             key={`${key}:${runScripts}`}
             referrerPolicy="no-referrer"
-            sandbox={runScripts && state.clientScript ? 'allow-scripts' : ''}
-            srcDoc={buildPreviewDocument(state.html ?? '', state.clientScript ?? null, runScripts && Boolean(state.clientScript))}
+            // Mode client selalu butuh skrip untuk me-render; toggle hanya mengatur client.js template.
+            sandbox={isClientMode || (runScripts && state.clientScript) ? 'allow-scripts' : ''}
+            srcDoc={isClientMode
+              ? buildClientPreviewDocument(state.bundleSource ?? '', state.props ?? {}, runScripts)
+              : buildPreviewDocument(state.html ?? '', state.clientScript ?? null, runScripts && Boolean(state.clientScript))}
             title={`Preview ${FIXTURE_LABELS[fixture]} (${device})`}
           />
         ) : (
           <div className="candidate-preview-placeholder" role={state.status === 'error' ? 'alert' : 'status'}>
-            {state.status === 'error' ? state.message : 'Me-render preview di sandbox…'}
+            {state.status === 'error' ? state.message : 'Menyiapkan preview…'}
           </div>
         )}
       </div>
       <p className="candidate-preview-note">
-        {state.status === 'ready' && state.clientScript && runScripts
-          ? 'JavaScript template berjalan di sandbox terisolasi dengan data contoh Bagdja: tanpa akses jaringan dan sesi platform. Tautan serta aksi transaksi tidak dijalankan di preview.'
-          : 'Preview hasil render server dengan data contoh Bagdja' + (state.clientScript ? ' (JavaScript dimatikan).' : '. Template ini tidak membawa JavaScript browser.')}
+        {isClientMode
+          ? 'Dirender di browser dari browser.js kandidat (file yang sama dengan yang dipakai pengunjung) dengan data contoh Bagdja, '
+            + 'di sandbox tanpa akses jaringan dan sesi platform.'
+            + (runScripts ? ' Tautan serta aksi transaksi tidak dijalankan di preview.' : ' client.js template dimatikan.')
+          : state.status === 'ready' && state.clientScript && runScripts
+            ? 'JavaScript template berjalan di sandbox terisolasi dengan data contoh Bagdja: tanpa akses jaringan dan sesi platform. Tautan serta aksi transaksi tidak dijalankan di preview.'
+            : 'Preview hasil render server dengan data contoh Bagdja' + (state.clientScript ? ' (JavaScript dimatikan).' : '. Template ini tidak membawa JavaScript browser.')}
       </p>
     </div>
   );
